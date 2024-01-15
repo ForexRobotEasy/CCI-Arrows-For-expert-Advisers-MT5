@@ -1,0 +1,90 @@
+mql5
+//+------------------------------------------------------------------+
+//| CCI Arrows For expert Advisers MT5                                 |
+//| Developer's site - forexroboteasy.com                            |
+//| Developed by Forex Robot Easy Team                               |
+//+------------------------------------------------------------------+
+
+#property copyright 'forexroboteasy.com'
+#property link      'forexroboteasy.com'
+
+//--- Indicator buffers
+double Buffer0[];
+double Buffer1[];
+
+//--- CCI settings
+input int CciPeriod=14;
+input int CciLevel=100;
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   //--- Indicator buffers mapping
+   SetIndexBuffer(0, Buffer0, INDICATOR_DATA);
+   SetIndexBuffer(1, Buffer1, INDICATOR_DATA);
+   
+   //--- Setting indicator line
+   SetIndexStyle(0,DRAW_ARROW,EMPTY,1,clrGreen);
+   SetIndexArrow(0,159);
+   SetIndexLabel(0,'Buy Signal');
+   
+   SetIndexStyle(1,DRAW_ARROW,EMPTY,1,clrRed);
+   SetIndexArrow(1,159);
+   SetIndexLabel(1,'Sell Signal');
+   
+   //--- Initialize indicator
+   IndicatorSetString(INDICATOR_SHORTNAME,'CCI Arrows MT5');
+   SetIndexDrawBegin(0,CciPeriod);
+   SetIndexDrawBegin(1,CciPeriod);
+   
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+   //--- Check for bars count
+   if(rates_total<=CciPeriod)
+      return(0);
+   
+   //--- Calculate CCI
+   int cci_handle=iCCI(Symbol(),PERIOD_CURRENT,CciPeriod,PRICE_CLOSE);
+   int limit=Bars-calculated-1;
+   
+   //--- Iterate through bars
+   for(int i=limit; i>=0; i--)
+   {
+      //--- Check for CCI signal
+      if(iCCI(Symbol(),PERIOD_CURRENT,CciPeriod,PRICE_CLOSE,i)>CciLevel)
+      {
+         Buffer0[i]=High[i];
+         Buffer1[i]=Low[i];
+      }
+      else if(iCCI(Symbol(),PERIOD_CURRENT,CciPeriod,PRICE_CLOSE,i)<-CciLevel)
+      {
+         Buffer0[i]=Low[i];
+         Buffer1[i]=High[i];
+      }
+      else
+      {
+         Buffer0[i]=0;
+         Buffer1[i]=0;
+      }
+   }
+   
+   //--- Return new rates count
+   return(rates_total);
+}
